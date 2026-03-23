@@ -50,8 +50,8 @@ export default function NewsletterEditorPage() {
   const [slackMessages, setSlackMessages] = useState<SlackNewsletterData[]>([])
   const [slackLoading, setSlackLoading] = useState(false)
   const [slackStep, setSlackStep] = useState<"closed" | "list" | "detail">("closed")
-  const [selectedMsg, setSelectedMsg] = useState<SlackNewsletterData | null>(null)
-  const [selectedTitle, setSelectedTitle] = useState("")
+  const [editTitles, setEditTitles] = useState<string[]>([])
+  const [editEditorial, setEditEditorial] = useState("")
 
   const fetchNewsletter = useCallback(async () => {
     try {
@@ -170,20 +170,19 @@ export default function NewsletterEditorPage() {
   }
 
   const handleSelectSlackMsg = (msg: SlackNewsletterData) => {
-    setSelectedMsg(msg)
-    setSelectedTitle(msg.titles[0] ?? "")
+    setEditTitles([...msg.titles])
+    setEditEditorial(msg.editorial)
     setSlackStep("detail")
   }
 
   const handleApplySlackData = async () => {
-    if (!selectedMsg) return
     try {
       const res = await fetch(`/api/newsletters/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          subject: selectedMsg.titles.join("\n"),
-          editorial: selectedMsg.editorial,
+          subject: editTitles.filter(Boolean).join("\n"),
+          editorial: editEditorial,
         }),
       })
       if (!res.ok) throw new Error("저장 실패")
@@ -305,22 +304,35 @@ export default function NewsletterEditorPage() {
                 </div>
               </>
             )}
-            {slackStep === "detail" && selectedMsg && (
+            {slackStep === "detail" && (
               <>
-                <h2 className="text-lg font-bold">{selectedMsg.issueNumber} — 제목/서문 확인</h2>
+                <h2 className="text-lg font-bold">제목/서문 수정 후 적용</h2>
                 <div>
                   <p className="text-sm font-medium text-gray-700 mb-2">제목 2종</p>
-                  <div className="space-y-1">
-                    {selectedMsg.titles.map((title, i) => (
-                      <p key={i} className="text-sm text-gray-800 p-2 bg-gray-50 rounded-lg">{title}</p>
+                  <div className="space-y-2">
+                    {editTitles.map((title, i) => (
+                      <input
+                        key={i}
+                        type="text"
+                        value={title}
+                        onChange={(e) => {
+                          const next = [...editTitles]
+                          next[i] = e.target.value
+                          setEditTitles(next)
+                        }}
+                        className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
                     ))}
                   </div>
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="text-sm font-medium text-gray-700 mb-1">서문</p>
-                  <p className="text-sm text-gray-600 bg-gray-50 rounded p-3 max-h-32 overflow-y-auto whitespace-pre-wrap">
-                    {selectedMsg.editorial}
-                  </p>
+                  <textarea
+                    value={editEditorial}
+                    onChange={(e) => setEditEditorial(e.target.value)}
+                    rows={6}
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  />
                 </div>
                 <div className="flex gap-2 justify-end pt-2">
                   <Button variant="outline" size="sm" onClick={() => setSlackStep("list")}>뒤로</Button>
