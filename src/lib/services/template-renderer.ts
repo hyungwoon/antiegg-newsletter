@@ -66,16 +66,9 @@ const buildSectionHtml = (articles: ArticleData[]): string => {
     const right = articles[i + 1]
     const leftCell = buildArticleCell(left, "left")
     const rightCell = right ? buildArticleCell(right, "right") : buildFillerCell()
-    rows.push(`<tr>
-  <td style="padding:0 10px 20px 10px;font-size:0;text-align:justify;">
-    <div class="stb-cols-2" style="text-align:justify;font-size:0;">
-      ${leftCell}
-      ${rightCell}
-    </div>
-  </td>
-</tr>`)
+    rows.push(`<div class="stb-block-outer"><table class="stb-block stb-cols-2" border="0" cellpadding="0" cellspacing="0" style="overflow:hidden;margin:0px auto;padding:0px;width:100%;max-width:630px;clear:both;line-height:1.7;border-width:0px;border: 0px;font-size:14px;border:0;box-sizing:border-box;" width="100%"><tbody><tr><td><table class="stb-cell-wrap" border="0" cellpadding="0" cellspacing="0" width="100%"><tbody><tr><td style="text-align:center;font-size:0;">${leftCell}${rightCell}</td></tr></tbody></table></td></tr></tbody></table></div>`)
   }
-  return rows.join("\n")
+  return rows.join("")
 }
 
 export const renderNewsletter = async (
