@@ -82,9 +82,9 @@ export const resolveArticle = async (id: string): Promise<ResolveResult> => {
   try {
     if (article.title) {
       const ghostResult = await ghost.searchPostByTitle(article.title)
-      if (ghostResult.featureImage) {
-        updateData.ghostImageUrl = ghostResult.featureImage
+      if (!ghostResult.error) {
         if (ghostResult.slug) updateData.ghostSlug = ghostResult.slug
+        if (ghostResult.featureImage) updateData.ghostImageUrl = ghostResult.featureImage
         ghostOk = true
       }
     }
