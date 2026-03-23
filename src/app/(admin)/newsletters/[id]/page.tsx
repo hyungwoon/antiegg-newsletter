@@ -37,7 +37,7 @@ interface Newsletter {
   articles: Article[]
 }
 
-type Tab = "articles" | "preview" | "settings"
+type Tab = "articles" | "preview"
 
 export default function NewsletterEditorPage() {
   const params = useParams()
@@ -226,13 +226,13 @@ export default function NewsletterEditorPage() {
       </div>
 
       <div className="flex gap-1 mb-6 p-1 bg-gray-100 rounded-lg w-fit">
-        {(["articles", "preview", "settings"] as Tab[]).map((t) => (
+        {(["articles", "preview"] as Tab[]).map((t) => (
           <button
             key={t}
             className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${tab === t ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
             onClick={() => setTab(t)}
           >
-            {t === "articles" ? "아티클" : t === "preview" ? "미리보기" : "설정"}
+            {t === "articles" ? "아티클" : "미리보기"}
           </button>
         ))}
       </div>
@@ -275,43 +275,6 @@ export default function NewsletterEditorPage() {
 
       {tab === "preview" && <HtmlPreview newsletterId={id} />}
 
-      {tab === "settings" && (
-        <div className="max-w-lg space-y-4">
-          <div className="flex justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleFetchFromSlack}
-              disabled={slackLoading}
-              className="gap-2"
-            >
-              <MessageSquare className={`h-4 w-4 ${slackLoading ? "animate-pulse" : ""}`} />
-              {slackLoading ? "불러오는 중..." : "슬랙에서 가져오기"}
-            </Button>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
-            <input
-              type="text"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">에디토리얼</label>
-            <textarea
-              value={editorial}
-              onChange={(e) => setEditorial(e.target.value)}
-              rows={6}
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            />
-          </div>
-          <Button onClick={handleSaveSettings} disabled={saving}>
-            {saving ? "저장 중..." : "저장"}
-          </Button>
-        </div>
-      )}
 
       {slackDialogOpen && slackData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
