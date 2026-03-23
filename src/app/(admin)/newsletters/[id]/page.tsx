@@ -213,11 +213,14 @@ export default function NewsletterEditorPage() {
           <StatusBadge status={newsletter.status} />
         </div>
         <div className="flex gap-2">
-          {newsletter.status === "DRAFT" && (
-            <Button variant="outline" onClick={() => handleStatusChange("READY")}>준비 완료</Button>
+          {newsletter.status !== "DRAFT" && (
+            <Button variant="outline" size="sm" onClick={() => handleStatusChange("DRAFT")}>초안으로</Button>
           )}
-          {newsletter.status === "READY" && (
-            <Button onClick={() => handleStatusChange("SENT")} className="bg-green-600 hover:bg-green-700">발송 완료</Button>
+          {newsletter.status !== "READY" && (
+            <Button variant="outline" size="sm" onClick={() => handleStatusChange("READY")}>준비 완료</Button>
+          )}
+          {newsletter.status !== "SENT" && (
+            <Button size="sm" onClick={() => handleStatusChange("SENT")} className="bg-green-600 hover:bg-green-700">발송 완료</Button>
           )}
         </div>
       </div>

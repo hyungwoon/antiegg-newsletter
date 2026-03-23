@@ -2,11 +2,7 @@ import { prisma } from "@/lib/db/prisma"
 import { NewsletterStatus } from "@/generated/prisma/client"
 import type { CreateNewsletterInput, UpdateNewsletterInput } from "@/lib/validations/newsletter"
 
-const STATUS_TRANSITIONS: Record<NewsletterStatus, NewsletterStatus[]> = {
-  DRAFT: ["READY"],
-  READY: ["SENT"],
-  SENT: [],
-}
+const ALL_STATUSES: NewsletterStatus[] = ["DRAFT", "READY", "SENT"]
 
 export const getNewsletters = async (status?: NewsletterStatus) => {
   return prisma.newsletter.findMany({
@@ -36,7 +32,6 @@ export const createNewsletter = async (data: CreateNewsletterInput) => {
 export const updateNewsletter = async (id: string, data: UpdateNewsletterInput) => {
   const newsletter = await prisma.newsletter.findUnique({ where: { id } })
   if (!newsletter) throw new Error("뉴스레터를 찾을 수 없습니다")
-  if (newsletter.status !== "DRAFT") throw new Error("초안 상태의 뉴스레터만 수정할 수 있습니다")
   return prisma.newsletter.update({
     where: { id },
     data: {
@@ -49,16 +44,14 @@ export const updateNewsletter = async (id: string, data: UpdateNewsletterInput) 
 export const deleteNewsletter = async (id: string) => {
   const newsletter = await prisma.newsletter.findUnique({ where: { id } })
   if (!newsletter) throw new Error("뉴스레터를 찾을 수 없습니다")
-  if (newsletter.status !== "DRAFT") throw new Error("초안 상태의 뉴스레터만 삭제할 수 있습니다")
   return prisma.newsletter.delete({ where: { id } })
 }
 
 export const updateStatus = async (id: string, status: NewsletterStatus) => {
   const newsletter = await prisma.newsletter.findUnique({ where: { id } })
   if (!newsletter) throw new Error("뉴스레터를 찾을 수 없습니다")
-  const allowed = STATUS_TRANSITIONS[newsletter.status]
-  if (!allowed.includes(status)) {
-    throw new Error(`${newsletter.status} → ${status} 상태 전환은 허용되지 않습니다`)
+  if (!ALL_STATUSES.includes(status)) {
+    throw new Error(`유효하지 않은 상태: ${status}`)
   }
   return prisma.newsletter.update({
     where: { id },
