@@ -67,10 +67,11 @@ const extractSection = (text: string, startMarker: string, endMarkers: string[])
   return afterStart.slice(0, endIdx).trim()
 }
 
-const stripEmoji = (s: string): string =>
+const stripSlackFormatting = (s: string): string =>
   s.replace(/:[a-z0-9_+-]+:/g, "")
    .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/gu, "")
    .replace(/🥚|📚|🔗|🔴/g, "")
+   .replace(/^\*\s?|\s?\*$/g, "")
    .replace(/\s+/g, " ")
    .trim()
 
@@ -81,7 +82,7 @@ const parseTitles = (section: string): string[] => {
     const trimmed = line.trim()
     if (!trimmed) continue
     if (trimmed.includes("[서문]") || trimmed.startsWith("*[")) continue
-    const cleaned = stripEmoji(
+    const cleaned = stripSlackFormatting(
       trimmed.replace(/^>\s*/, "").replace(/^\*\s*/, "").replace(/\s*\*$/, "").trim()
     )
     if (cleaned) titles.push(cleaned)
@@ -102,7 +103,7 @@ const parseEditorial = (section: string): string => {
       continue
     }
     if (foundStart) {
-      const cleaned = stripEmoji(trimmed.replace(/^>\s*/, "").trim())
+      const cleaned = stripSlackFormatting(trimmed.replace(/^>\s*/, "").trim())
       if (cleaned) editorialLines.push(cleaned)
     }
   }
@@ -110,7 +111,7 @@ const parseEditorial = (section: string): string => {
   if (editorialLines.length === 0) {
     return section
       .split("\n")
-      .map((l) => stripEmoji(l.replace(/^>\s*/, "").trim()))
+      .map((l) => stripSlackFormatting(l.replace(/^>\s*/, "").trim()))
       .filter((l) => Boolean(l) && !l.match(/\*`.*`\*/))
       .join(" ")
   }
