@@ -5,3 +5,6 @@ dist/
 !templates/*.html
 output/
 .omc/
+.next/
+src/generated/
+public/uploads/

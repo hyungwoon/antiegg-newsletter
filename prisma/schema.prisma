@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum NewsletterStatus {
+  DRAFT
+  READY
+  SENT
+}
+
+enum ArticleSection {
+  CURATION
+  GRAY
+}
+
+model Newsletter {
+  id        String           @id @default(cuid())
+  subject   String
+  editorial String           @default("")
+  status    NewsletterStatus @default(DRAFT)
+  htmlOutput String?
+  sentAt    DateTime?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  articles  Article[]
+
+  @@index([status])
+}
+
+model Article {
+  id             String         @id @default(cuid())
+  newsletterId   String
+  notionPageId   String?
+  ghostSlug      String?
+  title          String
+  description    String         @default("")
+  section        ArticleSection @default(CURATION)
+  sortOrder      Int
+  ghostImageUrl  String?
+  wpImageUrl     String?
+  wpLink         String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  newsletter     Newsletter     @relation(fields: [newsletterId], references: [id], onDelete: Cascade)
+
+  @@index([newsletterId])
+  @@unique([newsletterId, sortOrder])
+}
