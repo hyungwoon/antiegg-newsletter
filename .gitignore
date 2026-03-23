@@ -3,3 +3,5 @@ dist/
 .env
 *.html
 !templates/*.html
+output/
+.omc/
