@@ -80,10 +80,11 @@ export const resolveArticle = async (id: string): Promise<ResolveResult> => {
   const updateData: Record<string, string | null> = {}
 
   try {
-    if (article.ghostSlug) {
-      const ghostResult = await ghost.fetchPostBySlug(article.ghostSlug)
+    if (article.title) {
+      const ghostResult = await ghost.searchPostByTitle(article.title)
       if (ghostResult.featureImage) {
         updateData.ghostImageUrl = ghostResult.featureImage
+        if (ghostResult.slug) updateData.ghostSlug = ghostResult.slug
         ghostOk = true
       }
     }

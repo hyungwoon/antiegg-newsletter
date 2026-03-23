@@ -51,6 +51,34 @@ export const fetchPostBySlug = async (slug: string): Promise<GhostPostResult> =>
   }
 }
 
-export const fetchPostsBySlugs = async (slugs: string[]): Promise<GhostPostResult[]> => {
-  return Promise.all(slugs.map((slug) => fetchPostBySlug(slug)))
+const normalizeQuotes = (s: string): string =>
+  s.replace(/[\u2018\u2019\u201A\u2039\u203A]/g, "'")
+   .replace(/[\u201C\u201D\u201E\u00AB\u00BB]/g, '"')
+
+const normalize = (s: string): string =>
+  normalizeQuotes(s).replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim().toLowerCase()
+
+export const searchPostByTitle = async (title: string): Promise<GhostPostResult> => {
+  const token = getAdminToken()
+  const cleaned = normalizeQuotes(title).replace(/[\r\n]+/g, " ").replace(/'/g, "\\'").trim()
+  const query = encodeURIComponent(cleaned.slice(0, 100))
+  const url = `${GHOST_API_URL}/ghost/api/admin/posts/?filter=title:~'${query}'&fields=slug,title,custom_excerpt,feature_image&limit=5`
+  const res = await fetch(url, {
+    headers: { Authorization: `Ghost ${token}` },
+  })
+  if (!res.ok) return { slug: title, error: `HTTP ${res.status}` }
+  const data = (await res.json()) as GhostPostsResponse
+  if (!data.posts.length) return { slug: title, error: "not found by title" }
+
+  const clean = normalize(title)
+  const exact = data.posts.find((p) => normalize(p.title) === clean)
+  const match = exact ?? data.posts.find((p) => normalize(p.title).includes(clean) || clean.includes(normalize(p.title)))
+  const post = match ?? data.posts[0]
+
+  return {
+    slug: post.slug,
+    title: post.title,
+    excerpt: post.custom_excerpt,
+    featureImage: post.feature_image,
+  }
 }

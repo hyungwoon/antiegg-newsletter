@@ -60,7 +60,7 @@ export function NotionImportDialog({ newsletterId, open, onClose, onImported }: 
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             notionPageId: a.notionPageId,
-            title: a.title,
+            title: a.title.replace(/[\r\n]+/g, " ").trim(),
             description: a.viralMent,
             section,
             ghostSlug,

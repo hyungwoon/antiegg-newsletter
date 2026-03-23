@@ -38,8 +38,13 @@ const decodeHtmlEntities = (s: string): string =>
     .replace(/&apos;/g, "'")
     .replace(/&hellip;/g, "...")
 
+const normalizeQuotes = (s: string): string =>
+  s.replace(/[\u2018\u2019\u201A\u2039\u203A]/g, "'")
+   .replace(/[\u201C\u201D\u201E\u00AB\u00BB]/g, '"')
+
 const cleanTitle = (s: string): string =>
-  decodeHtmlEntities(s.replace(/<[^>]*>/g, ""))
+  normalizeQuotes(decodeHtmlEntities(s.replace(/<[^>]*>/g, "")))
+    .replace(/[\r\n]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase()
