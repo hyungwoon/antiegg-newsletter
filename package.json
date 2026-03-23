@@ -1,0 +1,22 @@
+{
+  "name": "antiegg-newsletter",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "ghost": "tsx src/fetch-ghost.ts",
+    "wp": "tsx src/fetch-wp.ts",
+    "send": "tsx src/send-stibee.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "jsonwebtoken": "^9.0.2",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
