@@ -47,12 +47,10 @@ export default function NewsletterEditorPage() {
   const [importOpen, setImportOpen] = useState(false)
   const [resolving, setResolving] = useState(false)
   const [processing, setProcessing] = useState(false)
-  const [subject, setSubject] = useState("")
-  const [editorial, setEditorial] = useState("")
-  const [saving, setSaving] = useState(false)
-  const [slackData, setSlackData] = useState<SlackNewsletterData | null>(null)
+  const [slackMessages, setSlackMessages] = useState<SlackNewsletterData[]>([])
   const [slackLoading, setSlackLoading] = useState(false)
-  const [slackDialogOpen, setSlackDialogOpen] = useState(false)
+  const [slackStep, setSlackStep] = useState<"closed" | "list" | "detail">("closed")
+  const [selectedMsg, setSelectedMsg] = useState<SlackNewsletterData | null>(null)
   const [selectedTitle, setSelectedTitle] = useState("")
 
   const fetchNewsletter = useCallback(async () => {
@@ -61,8 +59,6 @@ export default function NewsletterEditorPage() {
       const data = await res.json() as { newsletter?: Newsletter; error?: string }
       if (!res.ok) throw new Error(data.error ?? "조회 실패")
       setNewsletter(data.newsletter ?? null)
-      setSubject(data.newsletter?.subject ?? "")
-      setEditorial(data.newsletter?.editorial ?? "")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "조회에 실패했습니다")
     }
@@ -158,15 +154,14 @@ export default function NewsletterEditorPage() {
     fetchNewsletter()
   }
 
-  const handleFetchFromSlack = async () => {
+  const handleFetchSlackList = async () => {
     setSlackLoading(true)
     try {
       const res = await fetch("/api/slack/newsletter")
-      const data = await res.json() as SlackNewsletterData & { error?: string }
+      const data = await res.json() as { messages?: SlackNewsletterData[]; error?: string }
       if (!res.ok) throw new Error(data.error ?? "슬랙 조회 실패")
-      setSlackData(data)
-      setSelectedTitle(data.titles[0] ?? "")
-      setSlackDialogOpen(true)
+      setSlackMessages(data.messages ?? [])
+      setSlackStep("list")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "슬랙 조회에 실패했습니다")
     } finally {
@@ -174,30 +169,29 @@ export default function NewsletterEditorPage() {
     }
   }
 
-  const handleApplySlackData = () => {
-    if (!slackData) return
-    if (selectedTitle) setSubject(selectedTitle)
-    if (slackData.editorial) setEditorial(slackData.editorial)
-    setSlackDialogOpen(false)
-    toast.success("슬랙 데이터를 적용했습니다. 저장 버튼을 눌러 확정하세요.")
+  const handleSelectSlackMsg = (msg: SlackNewsletterData) => {
+    setSelectedMsg(msg)
+    setSelectedTitle(msg.titles[0] ?? "")
+    setSlackStep("detail")
   }
 
-  const handleSaveSettings = async () => {
-    setSaving(true)
+  const handleApplySlackData = async () => {
+    if (!selectedMsg) return
     try {
       const res = await fetch(`/api/newsletters/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject, editorial }),
+        body: JSON.stringify({
+          subject: selectedTitle || selectedMsg.titles[0],
+          editorial: selectedMsg.editorial,
+        }),
       })
-      const data = await res.json() as { error?: string }
-      if (!res.ok) throw new Error(data.error ?? "저장 실패")
-      toast.success("저장되었습니다")
+      if (!res.ok) throw new Error("저장 실패")
+      toast.success("제목과 서문이 적용되었습니다")
+      setSlackStep("closed")
       fetchNewsletter()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "저장에 실패했습니다")
-    } finally {
-      setSaving(false)
+      toast.error(error instanceof Error ? error.message : "적용에 실패했습니다")
     }
   }
 
@@ -213,6 +207,10 @@ export default function NewsletterEditorPage() {
           <StatusBadge status={newsletter.status} />
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleFetchSlackList} disabled={slackLoading} className="gap-2">
+            <MessageSquare className={`h-4 w-4 ${slackLoading ? "animate-pulse" : ""}`} />
+            슬랙에서 가져오기
+          </Button>
           {newsletter.status !== "DRAFT" && (
             <Button variant="outline" size="sm" onClick={() => handleStatusChange("DRAFT")}>초안으로</Button>
           )}
@@ -276,44 +274,65 @@ export default function NewsletterEditorPage() {
       {tab === "preview" && <HtmlPreview newsletterId={id} />}
 
 
-      {slackDialogOpen && slackData && (
+      {slackStep !== "closed" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6 space-y-4">
-            <h2 className="text-lg font-bold">슬랙에서 가져오기 — {slackData.issueNumber}</h2>
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">제목 선택</p>
-              <div className="space-y-2">
-                {slackData.titles.map((title, i) => (
-                  <label key={i} className="flex items-start gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="slack-title"
-                      value={title}
-                      checked={selectedTitle === title}
-                      onChange={() => setSelectedTitle(title)}
-                      className="mt-0.5"
-                    />
-                    <span className="text-sm text-gray-800">{title}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            {slackData.editorial && (
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-1">서문 미리보기</p>
-                <p className="text-sm text-gray-600 bg-gray-50 rounded p-2 max-h-32 overflow-y-auto whitespace-pre-wrap">
-                  {slackData.editorial}
-                </p>
-              </div>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 space-y-4 max-h-[80vh] flex flex-col">
+            {slackStep === "list" && (
+              <>
+                <h2 className="text-lg font-bold">슬랙 뉴스레터 메시지 선택</h2>
+                <div className="flex-1 overflow-y-auto space-y-2">
+                  {slackMessages.length === 0 ? (
+                    <p className="text-sm text-gray-500 py-8 text-center">뉴스레터 메시지를 찾을 수 없습니다</p>
+                  ) : (
+                    slackMessages.map((msg, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleSelectSlackMsg(msg)}
+                        className="w-full text-left p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <p className="text-sm font-bold text-gray-900">{msg.issueNumber} 뉴스레터</p>
+                        <p className="text-xs text-gray-500 mt-1 truncate">{msg.titles[0]}</p>
+                      </button>
+                    ))
+                  )}
+                </div>
+                <div className="flex justify-end pt-2">
+                  <Button variant="outline" size="sm" onClick={() => setSlackStep("closed")}>닫기</Button>
+                </div>
+              </>
             )}
-            <div className="flex gap-2 justify-end pt-2">
-              <Button variant="outline" size="sm" onClick={() => setSlackDialogOpen(false)}>
-                취소
-              </Button>
-              <Button size="sm" onClick={handleApplySlackData}>
-                적용
-              </Button>
-            </div>
+            {slackStep === "detail" && selectedMsg && (
+              <>
+                <h2 className="text-lg font-bold">{selectedMsg.issueNumber} — 제목/서문 적용</h2>
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">제목 선택</p>
+                  <div className="space-y-2">
+                    {selectedMsg.titles.map((title, i) => (
+                      <label key={i} className="flex items-start gap-2 cursor-pointer p-2 border rounded-lg hover:bg-gray-50">
+                        <input
+                          type="radio"
+                          name="slack-title"
+                          checked={selectedTitle === title}
+                          onChange={() => setSelectedTitle(title)}
+                          className="mt-0.5"
+                        />
+                        <span className="text-sm text-gray-800">{title}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">서문</p>
+                  <p className="text-sm text-gray-600 bg-gray-50 rounded p-3 max-h-32 overflow-y-auto whitespace-pre-wrap">
+                    {selectedMsg.editorial}
+                  </p>
+                </div>
+                <div className="flex gap-2 justify-end pt-2">
+                  <Button variant="outline" size="sm" onClick={() => setSlackStep("list")}>뒤로</Button>
+                  <Button size="sm" onClick={handleApplySlackData}>적용</Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

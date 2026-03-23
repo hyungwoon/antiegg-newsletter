@@ -116,16 +116,22 @@ const parseEditorial = (section: string): string => {
 }
 
 export const findNewsletterMessage = async (channelId: string): Promise<SlackNewsletterData | null> => {
+  const all = await findAllNewsletterMessages(channelId)
+  return all[0] ?? null
+}
+
+export const findAllNewsletterMessages = async (channelId: string): Promise<SlackNewsletterData[]> => {
   try {
-    const messages = await fetchRecentMessages(channelId, 20)
+    const messages = await fetchRecentMessages(channelId, 30)
+    const results: SlackNewsletterData[] = []
     for (const msg of messages) {
       if (!msg.text) continue
       if (msg.text.includes("뉴스레터") && msg.text.includes("[제목]")) {
         const parsed = parseNewsletterMessage(msg.text)
-        if (parsed) return parsed
+        if (parsed) results.push(parsed)
       }
     }
-    return null
+    return results
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : "Slack 메시지 조회 실패")
   }
