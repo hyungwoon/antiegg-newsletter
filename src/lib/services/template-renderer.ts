@@ -77,7 +77,7 @@ export const renderNewsletter = async (
     .map(toArticleData)
 
   let html = readTemplate()
-  html = html.replace(/\{\{subject\}\}/g, newsletter.subject)
+  html = html.replace(/\{\{subject\}\}/g, newsletter.subject.split("\n")[0])
   html = html.replace(/\{\{editorial\}\}/g, newsletter.editorial)
   html = html.replace("{{curation_section}}", buildSectionHtml(curationArticles))
 

@@ -67,20 +67,24 @@ const extractSection = (text: string, startMarker: string, endMarkers: string[])
   return afterStart.slice(0, endIdx).trim()
 }
 
+const stripEmoji = (s: string): string =>
+  s.replace(/:[a-z0-9_+-]+:/g, "")
+   .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/gu, "")
+   .replace(/🥚|📚|🔗|🔴/g, "")
+   .replace(/\s+/g, " ")
+   .trim()
+
 const parseTitles = (section: string): string[] => {
   const lines = section.split("\n")
   const titles: string[] = []
   for (const line of lines) {
     const trimmed = line.trim()
     if (!trimmed) continue
-    const cleaned = trimmed
-      .replace(/^>\s*/, "")
-      .replace(/^🥚\s*/, "")
-      .replace(/^\*\[서문\]\*.*$/, "")
-      .trim()
-    if (cleaned && !cleaned.startsWith("*[")) {
-      titles.push(cleaned)
-    }
+    if (trimmed.includes("[서문]") || trimmed.startsWith("*[")) continue
+    const cleaned = stripEmoji(
+      trimmed.replace(/^>\s*/, "").replace(/^\*\s*/, "").replace(/\s*\*$/, "").trim()
+    )
+    if (cleaned) titles.push(cleaned)
   }
   return titles.filter(Boolean)
 }
@@ -88,18 +92,17 @@ const parseTitles = (section: string): string[] => {
 const parseEditorial = (section: string): string => {
   const lines = section.split("\n")
   const editorialLines: string[] = []
-  let inEditorial = false
+  let foundStart = false
 
   for (const line of lines) {
     const trimmed = line.trim()
     if (!trimmed) continue
-
-    if (trimmed.match(/^\*`.*`\*$/) || trimmed.match(/^>\s*\*`/)) {
-      inEditorial = true
+    if (trimmed.match(/\*`.*`\*/) || trimmed.match(/`.*`/)) {
+      foundStart = true
       continue
     }
-    if (inEditorial) {
-      const cleaned = trimmed.replace(/^>\s*/, "").trim()
+    if (foundStart) {
+      const cleaned = stripEmoji(trimmed.replace(/^>\s*/, "").trim())
       if (cleaned) editorialLines.push(cleaned)
     }
   }
@@ -107,12 +110,12 @@ const parseEditorial = (section: string): string => {
   if (editorialLines.length === 0) {
     return section
       .split("\n")
-      .map((l) => l.replace(/^>\s*/, "").trim())
-      .filter(Boolean)
-      .join("\n")
+      .map((l) => stripEmoji(l.replace(/^>\s*/, "").trim()))
+      .filter((l) => Boolean(l) && !l.match(/\*`.*`\*/))
+      .join(" ")
   }
 
-  return editorialLines.join("\n")
+  return editorialLines.join(" ")
 }
 
 export const findNewsletterMessage = async (channelId: string): Promise<SlackNewsletterData | null> => {

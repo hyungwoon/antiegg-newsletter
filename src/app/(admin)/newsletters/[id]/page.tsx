@@ -182,7 +182,7 @@ export default function NewsletterEditorPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          subject: selectedTitle || selectedMsg.titles[0],
+          subject: selectedMsg.titles.join("\n"),
           editorial: selectedMsg.editorial,
         }),
       })
@@ -203,7 +203,11 @@ export default function NewsletterEditorPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-bold truncate max-w-md">{newsletter.subject}</h1>
+          <div>
+            {newsletter.subject.split("\n").map((t, i) => (
+              <h1 key={i} className="text-lg font-bold truncate max-w-md">{t}</h1>
+            ))}
+          </div>
           <StatusBadge status={newsletter.status} />
         </div>
         <div className="flex gap-2">
@@ -303,21 +307,12 @@ export default function NewsletterEditorPage() {
             )}
             {slackStep === "detail" && selectedMsg && (
               <>
-                <h2 className="text-lg font-bold">{selectedMsg.issueNumber} — 제목/서문 적용</h2>
+                <h2 className="text-lg font-bold">{selectedMsg.issueNumber} — 제목/서문 확인</h2>
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">제목 선택</p>
-                  <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-700 mb-2">제목 2종</p>
+                  <div className="space-y-1">
                     {selectedMsg.titles.map((title, i) => (
-                      <label key={i} className="flex items-start gap-2 cursor-pointer p-2 border rounded-lg hover:bg-gray-50">
-                        <input
-                          type="radio"
-                          name="slack-title"
-                          checked={selectedTitle === title}
-                          onChange={() => setSelectedTitle(title)}
-                          className="mt-0.5"
-                        />
-                        <span className="text-sm text-gray-800">{title}</span>
-                      </label>
+                      <p key={i} className="text-sm text-gray-800 p-2 bg-gray-50 rounded-lg">{title}</p>
                     ))}
                   </div>
                 </div>
