@@ -2,7 +2,8 @@ import { readFileSync } from "fs"
 import { join } from "path"
 import { prisma } from "@/lib/db/prisma"
 
-const STB_FONT = "AppleSDGothic,apple sd gothic neo,noto sans korean,noto sans korean regular,noto sans cjk kr,noto sans cjk,nanum gothic,malgun gothic,dotum,arial,helvetica,MS Gothic,sans-serif!important"
+const F = "AppleSDGothic, apple sd gothic neo, noto sans korean, noto sans korean regular, noto sans cjk kr, noto sans cjk, nanum gothic, malgun gothic, dotum, arial, helvetica, MS Gothic, sans-serif!important"
+const CELL_STYLE = "max-width:315px;width:100%!important;margin:0;vertical-align:top;border-collapse:collapse;box-sizing:border-box;font-size:unset;mso-table-lspace:0pt;mso-table-rspace:0pt;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%;display:inline-block;"
 const FILLER_IMAGE = "https://img2.stibee.com/36020_2617355_1737890530648157143.png"
 
 const readTemplate = (): string => {
@@ -18,46 +19,14 @@ interface ArticleData {
 }
 
 const buildArticleCell = (article: ArticleData, side: "left" | "right"): string => {
-  const cellClass = side === "left" ? "stb-left-cell" : "stb-right-cell"
-  const imgAlign = side === "left" ? "justify" : "center"
-  return `<div class="${cellClass}" style="max-width:315px;width:100%!important;margin:0;vertical-align:top;font-family:${STB_FONT};display:inline-block;">
-  <div class="stb-image-box" style="text-align:${imgAlign};">
-    <table border="0" cellpadding="0" cellspacing="0" style="width:100%;" align="center">
-      <tr><td style="padding:15px 5px 0 5px;text-align:${imgAlign};font-size:0;border:0;line-height:0;width:100%;box-sizing:border-box;">
-        <a href="${article.link_url}" target="_blank" style="text-decoration:none;color:#333;font-weight:normal;">
-          <img src="${article.image_url}" style="width:305px;display:inline;vertical-align:bottom;text-align:${imgAlign};max-width:100%;height:auto;border:0;" width="305" />
-        </a>
-      </td></tr>
-    </table>
-  </div>
-  <div class="stb-text-box" style="text-align:center;margin:0;line-height:1.7;word-break:break-word;font-size:14px;font-family:${STB_FONT};color:#333333;">
-    <table class="stb-text-box-inner" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
-      <tr><td style="padding:20px 5px 25px 5px;font-size:14px;line-height:1.7;font-family:${STB_FONT};color:#333333;">
-        <div style="text-align:left;"><span style="font-size:18px;"><span class="stb-bold" style="font-weight:bold;">${article.title}</span></span></div>
-        <div style="text-align:left;"><br></div>
-        <div style="text-align:left;"><span style="color:#333333;"><span style="font-size:14px;">${article.description} <a href="${article.link_url}" target="_blank" style="color:#333;font-weight:normal;text-decoration:none;"><span style="text-decoration:underline;font-weight:bold;color:#f7343c;" class="stb-underline stb-bold stb-fore-colored">읽으러 가기</span></a></span></span></div>
-        <div style="text-align:left;"><br></div>
-      </td></tr>
-    </table>
-  </div>
-</div>`
+  const cls = side === "left" ? "stb-left-cell" : "stb-right-cell"
+  const align = side === "left" ? "justify" : "justify"
+  const imgCls = side === "left" ? "stb-justify" : "stb-justify"
+  return `<div class="${cls}" style="${CELL_STYLE}"><div class="stb-image-box" style="text-align:${align};margin:0px;width:100%;box-sizing:border-box;clear:both;;"><table border="0" cellpadding="0" cellspacing="0" style="width:100%;" align="center"><tbody><tr><td style="padding:15px 5px 25px 5px;padding-bottom:0;;text-align:${align};font-size:0;border:0;line-height:0;width:100%;box-sizing:border-box;"><a href="${article.link_url}" target="_blank" style="text-decoration: none; color: rgb(51, 51, 51); font-weight: normal;"><img src="${article.image_url}" style="width:305px;display:inline;vertical-align:bottom;text-align:${align};max-width:100%;height:auto;border:0;" width="305" class="${imgCls}"></a></td></tr></tbody></table></div><div class="stb-text-box" style="text-align:center;margin:0px;;line-height:1.7;word-break:break-word;font-size:14px;font-family:${F};;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;color:#333333;clear:both;border:0;mso-line-height-rule-rule:exactly;"><table class="stb-text-box-inner" border="0" cellpadding="0" cellspacing="0" style="width:100%;"><tbody><tr><td style="padding:15px 5px 25px 5px;padding-top:20px;font-size:14px;line-height:1.7;word-break:break-word;color:#333333;border:0;font-family:${F};;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;width:100%;"><div style="text-align: left;"><span style="font-size: 18px;"><span class="stb-bold" style="font-weight: bold;">${article.title}</span></span></div><div style="text-align: left;"><br></div><div style="text-align: left;"><span style="color: #333333;" class="stb-fore-colored"><span style="font-size: 14px;">${article.description} <a href="${article.link_url}" target="_blank" style="color: rgb(51, 51, 51); font-weight: normal; text-decoration: none;"><span style="text-decoration: underline; font-weight: bold; color: #f7343c;" class="stb-underline stb-bold stb-fore-colored">읽으러 가기</span></a></span></span></div><div style="text-align: left;"><br></div></td></tr></tbody></table></div></div>`
 }
 
 const buildFillerCell = (): string =>
-  `<div class="stb-right-cell" style="max-width:315px;width:100%!important;margin:0;vertical-align:top;font-family:${STB_FONT};display:inline-block;">
-  <div class="stb-image-box" style="text-align:center;">
-    <table border="0" cellpadding="0" cellspacing="0" style="width:100%;" align="center">
-      <tr><td style="padding:15px 5px 0 5px;text-align:center;font-size:0;border:0;line-height:0;width:100%;box-sizing:border-box;">
-        <img src="${FILLER_IMAGE}" style="width:305px;display:inline;vertical-align:bottom;text-align:center;max-width:100%;height:auto;border:0;" width="305" />
-      </td></tr>
-    </table>
-  </div>
-  <div class="stb-text-box" style="text-align:center;margin:0;line-height:1.7;word-break:break-word;font-size:14px;font-family:${STB_FONT};color:#333333;">
-    <table class="stb-text-box-inner" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
-      <tr><td style="padding:20px 5px 25px 5px;"><div>&nbsp;&nbsp;</div></td></tr>
-    </table>
-  </div>
-</div>`
+  `<div class="stb-right-cell" style="${CELL_STYLE}"><div class="stb-image-box" style="text-align:center;margin:0px;width:100%;box-sizing:border-box;clear:both;;"><table border="0" cellpadding="0" cellspacing="0" style="width:100%;" align="center"><tbody><tr><td style="padding:15px 5px 25px 5px;padding-bottom:0;;text-align:center;font-size:0;border:0;line-height:0;width:100%;box-sizing:border-box;"><img src="${FILLER_IMAGE}" style="width:305px;display:inline;vertical-align:bottom;text-align:center;max-width:100%;height:auto;border:0;" width="305" class="stb-center"></td></tr></tbody></table></div><div class="stb-text-box" style="text-align:center;margin:0px;;line-height:1.7;word-break:break-word;font-size:14px;font-family:${F};;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;color:#333333;clear:both;border:0;mso-line-height-rule-rule:exactly;"><table class="stb-text-box-inner" border="0" cellpadding="0" cellspacing="0" style="width:100%;"><tbody><tr><td style="padding:15px 5px 25px 5px;padding-top:20px;font-size:14px;line-height:1.7;word-break:break-word;color:#333333;border:0;font-family:${F};;-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;width:100%;"><div>&nbsp;&nbsp;</div></td></tr></tbody></table></div></div>`
 
 const buildSectionHtml = (articles: ArticleData[]): string => {
   const rows: string[] = []
