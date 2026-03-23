@@ -64,9 +64,12 @@ export default function NewsletterEditorPage() {
     setResolving(true)
     try {
       const res = await fetch(`/api/newsletters/${id}/articles/resolve`, { method: "POST" })
-      const data = await res.json() as { error?: string }
+      const data = await res.json() as { articles?: Array<{ ghostOk: boolean; wpOk: boolean }>; error?: string }
       if (!res.ok) throw new Error(data.error ?? "연동 실패")
-      toast.success("Ghost + WP 연동이 완료되었습니다")
+      const results = data.articles ?? []
+      const ghostOk = results.filter((r) => r.ghostOk).length
+      const wpOk = results.filter((r) => r.wpOk).length
+      toast.success(`연동 완료: Ghost ${ghostOk}/${results.length}, WP ${wpOk}/${results.length}`)
       fetchNewsletter()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "연동에 실패했습니다")

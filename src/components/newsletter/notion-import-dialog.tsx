@@ -47,27 +47,32 @@ export function NotionImportDialog({ newsletterId, open, onClose, onImported }: 
     const toImport = articles.filter((a) => selected.has(a.notionPageId))
     if (!toImport.length) return
     setImporting(true)
+    let successCount = 0
+    let failCount = 0
     try {
-      await Promise.all(
-        toImport.map((a) => {
-          const section = a.contentType === "GRAY" ? "GRAY" : "CURATION"
-          const ghostSlug = a.articleUrl
-            ? (() => { try { const u = new URL(a.articleUrl); const parts = u.pathname.replace(/\/$/, "").split("/").filter(Boolean); return parts[parts.length - 1] ?? undefined } catch { return undefined } })()
-            : undefined
-          return fetch(`/api/newsletters/${newsletterId}/articles`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              notionPageId: a.notionPageId,
-              title: a.title,
-              description: a.viralMent,
-              section,
-              ghostSlug,
-            }),
-          })
+      for (const a of toImport) {
+        const section = a.contentType === "GRAY" ? "GRAY" : "CURATION"
+        const ghostSlug = a.articleUrl
+          ? (() => { try { const u = new URL(a.articleUrl); const parts = u.pathname.replace(/\/$/, "").split("/").filter(Boolean); return parts[parts.length - 1] ?? undefined } catch { return undefined } })()
+          : undefined
+        const res = await fetch(`/api/newsletters/${newsletterId}/articles`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            notionPageId: a.notionPageId,
+            title: a.title,
+            description: a.viralMent,
+            section,
+            ghostSlug,
+          }),
         })
-      )
-      toast.success(`${toImport.length}개 아티클을 가져왔습니다`)
+        if (res.ok) { successCount++ } else { failCount++ }
+      }
+      if (failCount > 0) {
+        toast.warning(`${successCount}개 성공, ${failCount}개 실패`)
+      } else {
+        toast.success(`${successCount}개 아티클을 가져왔습니다`)
+      }
       onImported()
       onClose()
     } catch {

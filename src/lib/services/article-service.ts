@@ -63,27 +63,63 @@ export const reorderArticles = async (newsletterId: string, articleIds: string[]
   return prisma.$transaction(updates)
 }
 
-export const resolveArticle = async (id: string) => {
-  const article = await prisma.article.findUnique({ where: { id } })
-  if (!article) throw new Error("아티클을 찾을 수 없습니다")
-
-  const ghostSlug = article.ghostSlug
-  const ghostResult = ghostSlug ? await ghost.fetchPostBySlug(ghostSlug) : null
-  const wpResult = article.title ? await wordpress.searchPostByTitle(article.title) : null
-
-  return prisma.article.update({
-    where: { id },
-    data: {
-      ...(ghostResult?.featureImage !== undefined && { ghostImageUrl: ghostResult.featureImage }),
-      ...(wpResult?.url && { wpLink: wpResult.url }),
-      ...(wpResult?.featuredImageUrl && { wpImageUrl: wpResult.featuredImageUrl }),
-    },
-  })
+export interface ResolveResult {
+  id: string
+  title: string
+  ghostOk: boolean
+  wpOk: boolean
+  error?: string
 }
 
-export const resolveAllArticles = async (newsletterId: string) => {
+export const resolveArticle = async (id: string): Promise<ResolveResult> => {
+  const article = await prisma.article.findUnique({ where: { id } })
+  if (!article) return { id, title: "", ghostOk: false, wpOk: false, error: "아티클 없음" }
+
+  let ghostOk = false
+  let wpOk = false
+  const updateData: Record<string, string | null> = {}
+
+  try {
+    if (article.ghostSlug) {
+      const ghostResult = await ghost.fetchPostBySlug(article.ghostSlug)
+      if (ghostResult.featureImage) {
+        updateData.ghostImageUrl = ghostResult.featureImage
+        ghostOk = true
+      }
+    }
+  } catch {
+    /* Ghost 연동 실패 — 무시하고 계속 */
+  }
+
+  try {
+    if (article.title) {
+      const wpResult = await wordpress.searchPostByTitle(article.title)
+      if (wpResult.url) {
+        updateData.wpLink = wpResult.url
+        wpOk = true
+      }
+      if (wpResult.featuredImageUrl) {
+        updateData.wpImageUrl = wpResult.featuredImageUrl
+      }
+    }
+  } catch {
+    /* WP 연동 실패 — 무시하고 계속 */
+  }
+
+  if (Object.keys(updateData).length > 0) {
+    await prisma.article.update({ where: { id }, data: updateData })
+  }
+
+  return { id, title: article.title, ghostOk, wpOk }
+}
+
+export const resolveAllArticles = async (newsletterId: string): Promise<ResolveResult[]> => {
   const articles = await prisma.article.findMany({ where: { newsletterId } })
-  return Promise.all(articles.map((a) => resolveArticle(a.id)))
+  const results: ResolveResult[] = []
+  for (const a of articles) {
+    results.push(await resolveArticle(a.id))
+  }
+  return results
 }
 
 export const processArticleImage = async (id: string, baseUrl: string) => {
