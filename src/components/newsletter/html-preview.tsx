@@ -14,16 +14,15 @@ interface HtmlPreviewProps {
 
 export function HtmlPreview({ newsletterId }: HtmlPreviewProps) {
   const [html, setHtml] = useState<string | null>(null)
-  const [mode, setMode] = useState<"preview" | "send">("preview")
   const [view, setView] = useState<ViewMode>("pc")
   const [loading, setLoading] = useState(false)
   const [iframeWidth, setIframeWidth] = useState(640)
   const dragging = useRef(false)
 
-  const fetchHtml = async (renderMode: "preview" | "send") => {
+  const fetchHtml = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/newsletters/${newsletterId}/render?mode=${renderMode}`)
+      const res = await fetch(`/api/newsletters/${newsletterId}/render?mode=send`)
       const data = await res.json() as { html?: string; error?: string }
       if (!res.ok) throw new Error(data.error ?? "렌더링 실패")
       setHtml(data.html ?? null)
@@ -32,11 +31,6 @@ export function HtmlPreview({ newsletterId }: HtmlPreviewProps) {
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleModeChange = async (newMode: "preview" | "send") => {
-    setMode(newMode)
-    await fetchHtml(newMode)
   }
 
   const handleCopy = async () => {
@@ -66,20 +60,6 @@ export function HtmlPreview({ newsletterId }: HtmlPreviewProps) {
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
-          <button
-            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${mode === "preview" ? "bg-white shadow text-gray-900" : "text-gray-500"}`}
-            onClick={() => handleModeChange("preview")}
-          >
-            미리보기
-          </button>
-          <button
-            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${mode === "send" ? "bg-white shadow text-gray-900" : "text-gray-500"}`}
-            onClick={() => handleModeChange("send")}
-          >
-            발송용
-          </button>
-        </div>
-        <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
           <button className={`p-1.5 rounded ${view === "pc" ? "bg-white shadow" : ""}`} onClick={() => setView("pc")} title="PC">
             <Monitor className="h-4 w-4" />
           </button>
@@ -90,7 +70,7 @@ export function HtmlPreview({ newsletterId }: HtmlPreviewProps) {
             자유
           </button>
         </div>
-        <Button variant="outline" size="sm" onClick={() => fetchHtml(mode)} disabled={loading}>
+        <Button variant="outline" size="sm" onClick={() => fetchHtml()} disabled={loading}>
           <RefreshCw className={`h-4 w-4 mr-1 ${loading ? "animate-spin" : ""}`} />
           불러오기
         </Button>

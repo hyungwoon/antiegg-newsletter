@@ -42,7 +42,7 @@ const buildSectionHtml = (articles: ArticleData[]): string => {
 
 export const renderNewsletter = async (
   newsletterId: string,
-  mode: "preview" | "send"
+  mode: "preview" | "send" = "send"
 ): Promise<string> => {
   const newsletter = await prisma.newsletter.findUnique({
     where: { id: newsletterId },
@@ -80,6 +80,11 @@ export const renderNewsletter = async (
   html = html.replace(/\{\{subject\}\}/g, newsletter.subject)
   html = html.replace(/\{\{editorial\}\}/g, newsletter.editorial)
   html = html.replace("{{curation_section}}", buildSectionHtml(curationArticles))
-  html = html.replace("{{gray_section}}", buildSectionHtml(grayArticles))
+
+  if (grayArticles.length > 0) {
+    html = html.replace("{{gray_section}}", buildSectionHtml(grayArticles))
+  } else {
+    html = html.replace(/<!--GRAY_START-->[\s\S]*?<!--GRAY_END-->/, "")
+  }
   return html
 }
