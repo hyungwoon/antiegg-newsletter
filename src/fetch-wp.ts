@@ -35,7 +35,7 @@ const fetchPostBySlug = async (
   credentials: string | null
 ): Promise<WpResult> => {
   const posts = await wpFetch(
-    `${apiUrl}/wp-json/wp/v2/posts?slug=${encodeURIComponent(slug)}&_fields=id,slug,link,title`,
+    `${apiUrl}/wp-json/wp/v2/posts?slug=${encodeURIComponent(slug)}&_fields=id,slug,link,title${credentials ? "&status=publish,future" : ""}`,
     credentials
   )
   if (!posts.length) return { slug, error: "not found by slug" }
@@ -48,7 +48,7 @@ const fetchPostByTitle = async (
   credentials: string | null
 ): Promise<WpResult> => {
   const posts = await wpFetch(
-    `${apiUrl}/wp-json/wp/v2/posts?search=${encodeURIComponent(title)}&_fields=id,slug,link,title&per_page=5`,
+    `${apiUrl}/wp-json/wp/v2/posts?search=${encodeURIComponent(title)}&_fields=id,slug,link,title&per_page=5${credentials ? "&status=publish,future" : ""}`,
     credentials
   )
   const decode = (s: string) =>
