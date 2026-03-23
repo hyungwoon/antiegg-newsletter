@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db/prisma"
 import * as ghost from "@/lib/adapters/ghost"
 import * as wordpress from "@/lib/adapters/wordpress"
+import * as imageProcessor from "@/lib/adapters/image-processor"
 import type { AddArticleInput, UpdateArticleInput } from "@/lib/validations/newsletter"
 
 export const extractGhostSlug = (squareCmsUrl: string): string | null => {
@@ -83,4 +84,28 @@ export const resolveArticle = async (id: string) => {
 export const resolveAllArticles = async (newsletterId: string) => {
   const articles = await prisma.article.findMany({ where: { newsletterId } })
   return Promise.all(articles.map((a) => resolveArticle(a.id)))
+}
+
+export const processArticleImage = async (id: string, baseUrl: string) => {
+  const article = await prisma.article.findUnique({ where: { id } })
+  if (!article) throw new Error("아티클을 찾을 수 없습니다")
+
+  const sourceUrl = article.ghostImageUrl
+  if (!sourceUrl) throw new Error("Ghost 이미지가 없습니다. 먼저 전체 연동을 실행하세요")
+
+  const slug = article.ghostSlug ?? article.id
+  const result = await imageProcessor.processImage(slug, sourceUrl, baseUrl)
+  if (result.error) throw new Error(`이미지 가공 실패: ${result.error}`)
+
+  return prisma.article.update({
+    where: { id },
+    data: { processedImageUrl: result.publicUrl },
+  })
+}
+
+export const processAllImages = async (newsletterId: string, baseUrl: string) => {
+  const articles = await prisma.article.findMany({
+    where: { newsletterId, ghostImageUrl: { not: null } },
+  })
+  return Promise.all(articles.map((a) => processArticleImage(a.id, baseUrl)))
 }

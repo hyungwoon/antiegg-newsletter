@@ -11,6 +11,7 @@ interface ArticleCardProps {
   ghostImageUrl: string | null
   wpImageUrl: string | null
   wpLink: string | null
+  processedImageUrl: string | null
   isFirst: boolean
   isLast: boolean
   onMoveUp: (id: string) => void
@@ -25,7 +26,7 @@ const SECTION_CONFIG: Record<ArticleSection, { label: string; className: string 
 
 export function ArticleCard({
   id, title, description, section,
-  ghostImageUrl, wpImageUrl, wpLink,
+  ghostImageUrl, wpImageUrl, wpLink, processedImageUrl,
   isFirst, isLast, onMoveUp, onMoveDown, onDelete,
 }: ArticleCardProps) {
   const { label, className } = SECTION_CONFIG[section]
@@ -51,7 +52,9 @@ export function ArticleCard({
           <span className={`text-xs ${wpLink ? "text-green-600" : "text-gray-400"}`}>
             WP {wpLink ? "✓" : "✗"}
           </span>
-          {wpImageUrl && <span className="text-xs text-green-600">이미지 ✓</span>}
+          <span className={`text-xs ${processedImageUrl ? "text-green-600" : "text-gray-400"}`}>
+            가공 {processedImageUrl ? "✓" : "✗"}
+          </span>
         </div>
         <p className="text-sm font-medium text-gray-900 truncate">{title}</p>
         <p className="text-xs text-gray-500 line-clamp-1">{description}</p>

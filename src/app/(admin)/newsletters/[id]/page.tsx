@@ -8,7 +8,7 @@ import { ArticleCard } from "@/components/newsletter/article-card"
 import { HtmlPreview } from "@/components/newsletter/html-preview"
 import { NotionImportDialog } from "@/components/newsletter/notion-import-dialog"
 import { toast } from "sonner"
-import { RefreshCw, Download } from "lucide-react"
+import { RefreshCw, Download, ImageIcon } from "lucide-react"
 import type { NewsletterStatus, ArticleSection } from "@/generated/prisma/client"
 
 interface Article {
@@ -19,6 +19,7 @@ interface Article {
   ghostImageUrl: string | null
   wpImageUrl: string | null
   wpLink: string | null
+  processedImageUrl: string | null
   sortOrder: number
 }
 
@@ -39,6 +40,7 @@ export default function NewsletterEditorPage() {
   const [tab, setTab] = useState<Tab>("articles")
   const [importOpen, setImportOpen] = useState(false)
   const [resolving, setResolving] = useState(false)
+  const [processing, setProcessing] = useState(false)
   const [subject, setSubject] = useState("")
   const [editorial, setEditorial] = useState("")
   const [saving, setSaving] = useState(false)
@@ -70,6 +72,21 @@ export default function NewsletterEditorPage() {
       toast.error(error instanceof Error ? error.message : "연동에 실패했습니다")
     } finally {
       setResolving(false)
+    }
+  }
+
+  const handleProcessImages = async () => {
+    setProcessing(true)
+    try {
+      const res = await fetch(`/api/newsletters/${id}/articles/process-images`, { method: "POST" })
+      const data = await res.json() as { error?: string }
+      if (!res.ok) throw new Error(data.error ?? "이미지 가공 실패")
+      toast.success("이미지 가공이 완료되었습니다")
+      fetchNewsletter()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "이미지 가공에 실패했습니다")
+    } finally {
+      setProcessing(false)
     }
   }
 
@@ -190,6 +207,10 @@ export default function NewsletterEditorPage() {
             <Button variant="outline" size="sm" onClick={handleResolveAll} disabled={resolving} className="gap-2">
               <RefreshCw className={`h-4 w-4 ${resolving ? "animate-spin" : ""}`} />
               전체 연동
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleProcessImages} disabled={processing} className="gap-2">
+              <ImageIcon className={`h-4 w-4 ${processing ? "animate-pulse" : ""}`} />
+              {processing ? "가공 중..." : "이미지 가공"}
             </Button>
           </div>
           <div className="space-y-2">

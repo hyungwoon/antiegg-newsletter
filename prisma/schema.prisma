@@ -42,9 +42,10 @@ model Article {
   description    String         @default("")
   section        ArticleSection @default(CURATION)
   sortOrder      Int
-  ghostImageUrl  String?
-  wpImageUrl     String?
-  wpLink         String?
+  ghostImageUrl     String?
+  wpImageUrl        String?
+  wpLink            String?
+  processedImageUrl String?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 

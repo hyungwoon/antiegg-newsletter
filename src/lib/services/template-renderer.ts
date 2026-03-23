@@ -43,15 +43,17 @@ export const renderNewsletter = async (
   })
   if (!newsletter) throw new Error("뉴스레터를 찾을 수 없습니다")
 
+  const getImageUrl = (a: { processedImageUrl: string | null; ghostImageUrl: string | null }, mode: string) =>
+    mode === "send"
+      ? (a.processedImageUrl ?? a.ghostImageUrl ?? "")
+      : (a.ghostImageUrl ?? "")
+
   const curationArticles: ArticleData[] = newsletter.articles
     .filter((a) => a.section === "CURATION")
     .map((a) => ({
       title: a.title,
       description: a.description,
-      image_url:
-        mode === "send"
-          ? (a.wpImageUrl ?? a.ghostImageUrl ?? "")
-          : (a.ghostImageUrl ?? ""),
+      image_url: getImageUrl(a, mode),
       link_url: a.wpLink ?? "",
     }))
 
@@ -60,10 +62,7 @@ export const renderNewsletter = async (
     .map((a) => ({
       title: a.title,
       description: a.description,
-      image_url:
-        mode === "send"
-          ? (a.wpImageUrl ?? a.ghostImageUrl ?? "")
-          : (a.ghostImageUrl ?? ""),
+      image_url: getImageUrl(a, mode),
       link_url: a.wpLink ?? "",
     }))
 
