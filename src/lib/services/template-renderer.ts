@@ -3,7 +3,7 @@ import { join } from "path"
 import { prisma } from "@/lib/db/prisma"
 
 const FONT = "AppleSDGothic, apple sd gothic neo, noto sans korean, noto sans korean regular, noto sans cjk kr, noto sans cjk, nanum gothic, malgun gothic, dotum, arial, helvetica, MS Gothic, sans-serif!important"
-const CELL_STYLE = "max-width:315px;width:50%;margin:0;vertical-align:top;border-collapse:collapse;box-sizing:border-box;font-size:unset;mso-table-lspace:0pt;mso-table-rspace:0pt;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%;display:inline-block;"
+const CELL_STYLE = "max-width:315px;width:100%!important;margin:0;vertical-align:top;border-collapse:collapse;box-sizing:border-box;font-size:unset;mso-table-lspace:0pt;mso-table-rspace:0pt;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%;display:inline-block;"
 const FILLER_IMG = "https://img2.stibee.com/36020_2617355_1737890530648157143.png"
 
 interface ArticleData {
