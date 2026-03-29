@@ -126,7 +126,7 @@ export const findNewsletterMessage = async (channelId: string): Promise<SlackNew
 
 export const findAllNewsletterMessages = async (channelId: string): Promise<SlackNewsletterData[]> => {
   try {
-    const messages = await fetchRecentMessages(channelId, 30)
+    const messages = await fetchRecentMessages(channelId, 200)
     const results: SlackNewsletterData[] = []
     for (const msg of messages) {
       if (!msg.text) continue
