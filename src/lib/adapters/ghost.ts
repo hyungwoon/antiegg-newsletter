@@ -58,27 +58,68 @@ const normalizeQuotes = (s: string): string =>
 const normalize = (s: string): string =>
   normalizeQuotes(s).replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim().toLowerCase()
 
-export const searchPostByTitle = async (title: string): Promise<GhostPostResult> => {
-  const token = getAdminToken()
-  const cleaned = normalizeQuotes(title).replace(/[\r\n]+/g, " ").replace(/'/g, "\\'").trim()
-  const query = encodeURIComponent(cleaned.slice(0, 100))
-  const url = `${GHOST_API_URL}/ghost/api/admin/posts/?filter=title:~'${query}'&fields=slug,title,custom_excerpt,feature_image&limit=5`
+const KOREAN_PARTICLES = /[은는이가을를의에서로와과도만까지부터마저조차라고/]/g
+
+const extractKeywords = (title: string): string[] =>
+  normalizeQuotes(title)
+    .replace(/[\r\n]+/g, " ")
+    .split(/\s+/)
+    .map((w) => w.replace(KOREAN_PARTICLES, "").trim())
+    .filter((w) => w.length >= 2)
+
+const ghostFilterSearch = async (
+  keyword: string,
+  token: string
+): Promise<GhostPostsResponse> => {
+  const escaped = keyword.replace(/'/g, "\\'")
+  const url = `${GHOST_API_URL}/ghost/api/admin/posts/?filter=title:~'${escaped}'&fields=slug,title,custom_excerpt,feature_image&limit=5`
   const res = await fetch(url, {
     headers: { Authorization: `Ghost ${token}` },
   })
-  if (!res.ok) return { slug: title, error: `HTTP ${res.status}` }
-  const data = (await res.json()) as GhostPostsResponse
-  if (!data.posts.length) return { slug: title, error: "not found by title" }
+  if (!res.ok) return { posts: [] }
+  return (await res.json()) as GhostPostsResponse
+}
 
+const pickBestMatch = (posts: GhostPost[], title: string): GhostPost => {
   const clean = normalize(title)
-  const exact = data.posts.find((p) => normalize(p.title) === clean)
-  const match = exact ?? data.posts.find((p) => normalize(p.title).includes(clean) || clean.includes(normalize(p.title)))
-  const post = match ?? data.posts[0]
+  const exact = posts.find((p) => normalize(p.title) === clean)
+  if (exact) return exact
+  const partial = posts.find(
+    (p) => normalize(p.title).includes(clean) || clean.includes(normalize(p.title))
+  )
+  return partial ?? posts[0]
+}
 
-  return {
-    slug: post.slug,
-    title: post.title,
-    excerpt: post.custom_excerpt,
-    featureImage: post.feature_image,
+export const searchPostByTitle = async (title: string): Promise<GhostPostResult> => {
+  const token = getAdminToken()
+  const cleaned = normalizeQuotes(title).replace(/[\r\n]+/g, " ").trim()
+
+  // 1차: 전체 제목으로 검색
+  const data = await ghostFilterSearch(cleaned, token)
+  if (data.posts.length) {
+    const post = pickBestMatch(data.posts, title)
+    return {
+      slug: post.slug,
+      title: post.title,
+      excerpt: post.custom_excerpt,
+      featureImage: post.feature_image,
+    }
   }
+
+  // 2차: 키워드 폴백 (가장 긴 키워드부터 시도)
+  const keywords = extractKeywords(title).sort((a, b) => b.length - a.length)
+  for (const keyword of keywords.slice(0, 3)) {
+    const fallback = await ghostFilterSearch(keyword, token)
+    if (fallback.posts.length) {
+      const post = pickBestMatch(fallback.posts, title)
+      return {
+        slug: post.slug,
+        title: post.title,
+        excerpt: post.custom_excerpt,
+        featureImage: post.feature_image,
+      }
+    }
+  }
+
+  return { slug: title, error: "not found by title" }
 }
