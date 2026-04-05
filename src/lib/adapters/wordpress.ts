@@ -42,8 +42,12 @@ const normalizeQuotes = (s: string): string =>
   s.replace(/[\u2018\u2019\u201A\u2039\u203A]/g, "'")
    .replace(/[\u201C\u201D\u201E\u00AB\u00BB]/g, '"')
 
+const stripHtmlTags = (s: string): string =>
+  s.replace(/<\/?[a-zA-Z][a-zA-Z0-9]*\b[^>]*>/g, "")
+
 const cleanTitle = (s: string): string =>
-  normalizeQuotes(decodeHtmlEntities(s.replace(/<[^>]*>/g, "")))
+  normalizeQuotes(decodeHtmlEntities(stripHtmlTags(s)))
+    .replace(/[<>'"]/g, "")
     .replace(/[\r\n]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
