@@ -2,7 +2,7 @@ import sharp from "sharp"
 import { mkdirSync, existsSync } from "fs"
 import { join } from "path"
 
-const UPLOAD_DIR = join(process.cwd(), "public", "uploads", "newsletter")
+const UPLOAD_DIR = join(process.cwd(), "uploads", "newsletter")
 const TARGET_W = 1260
 const TARGET_H = 720
 const RADIUS = 24

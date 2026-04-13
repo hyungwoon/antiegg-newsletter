@@ -4,6 +4,7 @@ dist/
 *.html
 !templates/*.html
 output/
+/uploads/
 .omc/
 .next/
 src/generated/
