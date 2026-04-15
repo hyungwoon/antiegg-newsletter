@@ -9,7 +9,8 @@
     "lint": "eslint",
     "ghost": "tsx src/fetch-ghost.ts",
     "wp": "tsx src/fetch-wp.ts",
-    "images": "tsx src/process-images.ts"
+    "images": "tsx src/process-images.ts",
+    "smoke:uploads": "tsx scripts/smoke-uploads.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
